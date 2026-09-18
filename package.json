@@ -1,0 +1,26 @@
+{
+  "name": "nmbrs-mcp",
+  "version": "0.1.0",
+  "description": "MCP-server bovenop de Nmbrs REST API",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "auth": "tsx scripts/auth.ts",
+    "companies": "tsx scripts/list-companies.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "open": "^10.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "tsx": "^4.16.5",
+    "typescript": "^5.5.4"
+  }
+}
