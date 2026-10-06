@@ -1,5 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Rebels Nmbrs MCP">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="MCP connector for Claude">
   <rect width="512" height="512" rx="112" fill="#1f2a44"/>
-  <path d="M136 376V136h52l136 156V136h52v240h-52L188 220v156z" fill="#ffffff"/>
-  <circle cx="392" cy="376" r="28" fill="#ff6b4a"/>
+  <path d="M96 256H416" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="96" cy="256" r="40" fill="#ffffff"/>
+  <circle cx="416" cy="256" r="40" fill="#ffffff"/>
+  <polygon fill="#e8815f" stroke="#e8815f" stroke-width="14" stroke-linejoin="round"
+    points="356,256 289.3,269.8 326.7,326.7 269.8,289.3 256,356 242.2,289.3 185.3,326.7 222.7,269.8 156,256 222.7,242.2 185.3,185.3 242.2,222.7 256,156 269.8,222.7 326.7,185.3 289.3,242.2"/>
 </svg>
