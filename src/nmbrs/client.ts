@@ -84,3 +84,36 @@ async function describeError(res: Response, path: string): Promise<string> {
   }
   return `Nmbrs-aanvraag mislukt (${res.status}): ${detail}`;
 }
+
+export type Query = Record<string, string | number | boolean | undefined>;
+
+interface Page<T> {
+  pagination?: { pageNumber?: number; totalPages?: number; totalRecords?: number };
+  data?: T[];
+}
+
+function withQuery(path: string, query: Query): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
+export function nmbrsPage<T>(path: string, query: Query = {}): Promise<Page<T>> {
+  return nmbrsFetch<Page<T>>(withQuery(path, query));
+}
+
+export async function nmbrsFetchAll<T>(path: string, query: Query = {}, maxPages = 50): Promise<T[]> {
+  const first = await nmbrsPage<T>(path, query);
+  const rows = [...(first.data ?? [])];
+  const totalPages = first.pagination?.totalPages ?? 1;
+  const firstNumber = first.pagination?.pageNumber ?? 1;
+
+  for (let n = 1; n < Math.min(totalPages, maxPages); n++) {
+    const next = await nmbrsPage<T>(path, { ...query, pageNumber: firstNumber + n });
+    rows.push(...(next.data ?? []));
+  }
+  return rows;
+}

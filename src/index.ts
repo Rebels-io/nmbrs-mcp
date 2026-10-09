@@ -2,14 +2,25 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { getConfig } from "./config.js";
 import { registerCompanyTools } from "./tools/companies.js";
+import { registerEmployeeTools } from "./tools/employees.js";
+import { registerLeaveTools } from "./tools/leave.js";
+import { registerPayrollTools } from "./tools/payroll.js";
+import { registerSalaryTools } from "./tools/salary.js";
 
-async function main() {
+export function createServer(): McpServer {
   getConfig();
 
-  const server = new McpServer({ name: "nmbrs-mcp", version: "0.1.0" });
+  const server = new McpServer({ name: "nmbrs-mcp", version: "0.2.0" });
   registerCompanyTools(server);
+  registerEmployeeTools(server);
+  registerSalaryTools(server);
+  registerLeaveTools(server);
+  registerPayrollTools(server);
+  return server;
+}
 
-  await server.connect(new StdioServerTransport());
+async function main() {
+  await createServer().connect(new StdioServerTransport());
 }
 
 main().catch((err) => {
