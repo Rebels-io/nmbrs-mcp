@@ -1,5 +1,10 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { z } from "zod";
+
+const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+loadEnv({ path: resolve(projectRoot, ".env") });
 
 const boolFromString = z
   .string()
@@ -48,7 +53,7 @@ export function getConfig(): NmbrsConfig {
     clientSecret: parsed.data.NMBRS_CLIENT_SECRET,
     subscriptionKey: parsed.data.NMBRS_SUBSCRIPTION_KEY,
     redirectUri: parsed.data.NMBRS_REDIRECT_URI,
-    tokenStorePath: parsed.data.NMBRS_TOKEN_STORE,
+    tokenStorePath: resolve(projectRoot, parsed.data.NMBRS_TOKEN_STORE),
     readOnly: parsed.data.NMBRS_READ_ONLY,
     redactBsn: parsed.data.NMBRS_REDACT_BSN,
   };
