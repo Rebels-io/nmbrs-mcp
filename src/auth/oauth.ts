@@ -209,7 +209,7 @@ export async function runAuthorizationFlow(): Promise<TokenResponse> {
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge", codeChallenge);
   authorizeUrl.searchParams.set("code_challenge_method", "S256");
-  authorizeUrl.searchParams.set("prompt", "login");
+  if (process.argv.includes("--login")) authorizeUrl.searchParams.set("prompt", "login");
 
   const callbackPromise = waitForCallback(state);
 
