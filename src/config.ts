@@ -23,6 +23,7 @@ const envSchema = z.object({
     .min(1, "NMBRS_SUBSCRIPTION_KEY ontbreekt. Zie .env.example."),
   NMBRS_REDIRECT_URI: z.string().url().default("http://localhost:8765/callback"),
   NMBRS_TOKEN_STORE: z.string().min(1).default("./.tokens.json"),
+  NMBRS_EXTRA_SCOPES: z.string().optional(),
   NMBRS_READ_ONLY: boolFromString,
   NMBRS_REDACT_BSN: boolFromString,
 });
@@ -33,6 +34,7 @@ export interface NmbrsConfig {
   subscriptionKey: string;
   redirectUri: string;
   tokenStorePath: string;
+  extraScopes: string[];
   readOnly: boolean;
   redactBsn: boolean;
 }
@@ -54,6 +56,7 @@ export function getConfig(): NmbrsConfig {
     subscriptionKey: parsed.data.NMBRS_SUBSCRIPTION_KEY,
     redirectUri: parsed.data.NMBRS_REDIRECT_URI,
     tokenStorePath: resolve(projectRoot, parsed.data.NMBRS_TOKEN_STORE),
+    extraScopes: (parsed.data.NMBRS_EXTRA_SCOPES ?? "").split(/\s+/).filter(Boolean),
     readOnly: parsed.data.NMBRS_READ_ONLY,
     redactBsn: parsed.data.NMBRS_REDACT_BSN,
   };

@@ -20,6 +20,9 @@ const SCOPES = [
   "employee.orgstructure.read",
   "employee.payment.read",
   "employee.employment.read",
+  "employee.payrollsettings.read",
+  "user.info.read",
+  "debtor.info.read",
   "offline_access",
 ];
 
@@ -206,7 +209,7 @@ export async function runAuthorizationFlow(): Promise<TokenResponse> {
   authorizeUrl.searchParams.set("client_id", config.clientId);
   authorizeUrl.searchParams.set("redirect_uri", config.redirectUri);
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("scope", SCOPES.join(" "));
+  authorizeUrl.searchParams.set("scope", [...SCOPES, ...config.extraScopes].join(" "));
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge", codeChallenge);
   authorizeUrl.searchParams.set("code_challenge_method", "S256");
