@@ -12,6 +12,8 @@ for (const path of paths) {
   try {
     const data = await nmbrsFetch<unknown>(path);
     console.log(JSON.stringify(describeShape(data), null, 2));
+    const total = (data as { pagination?: { totalRecords?: number } }).pagination?.totalRecords;
+    if (total !== undefined) console.log(`totalRecords: ${total}`);
   } catch (err) {
     console.log("FOUT:", err instanceof Error ? err.message : err);
   }
