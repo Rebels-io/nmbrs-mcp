@@ -15,6 +15,7 @@ const SCOPES = [
   "company.info.read",
   "company.payrollsettings.read",
   "company.leave.read",
+  "employee.leave.read",
   "employee.info.read",
   "employee.orgstructure.read",
   "employee.payment.read",
