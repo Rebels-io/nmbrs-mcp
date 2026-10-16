@@ -26,6 +26,10 @@ const SCOPES = [
   "offline_access",
 ];
 
+export function requestedScopes(): string[] {
+  return [...SCOPES, ...getConfig().extraScopes];
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token?: string;
@@ -34,14 +38,14 @@ export interface TokenResponse {
   scope?: string;
 }
 
-interface OidcConfig {
+export interface OidcConfig {
   authorization_endpoint: string;
   token_endpoint: string;
 }
 
 let discoveryCache: OidcConfig | null = null;
 
-async function discoverEndpoints(): Promise<OidcConfig> {
+export async function discoverEndpoints(): Promise<OidcConfig> {
   if (discoveryCache) return discoveryCache;
 
   const res = await fetch(DISCOVERY_URL);
@@ -57,15 +61,15 @@ function base64UrlEncode(input: Buffer): string {
   return input.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function generateCodeVerifier(): string {
+export function generateCodeVerifier(): string {
   return base64UrlEncode(randomBytes(32));
 }
 
-function generateCodeChallenge(verifier: string): string {
+export function generateCodeChallenge(verifier: string): string {
   return base64UrlEncode(createHash("sha256").update(verifier).digest());
 }
 
-function generateState(): string {
+export function generateState(): string {
   return base64UrlEncode(randomBytes(16));
 }
 
@@ -209,7 +213,7 @@ export async function runAuthorizationFlow(): Promise<TokenResponse> {
   authorizeUrl.searchParams.set("client_id", config.clientId);
   authorizeUrl.searchParams.set("redirect_uri", config.redirectUri);
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("scope", [...SCOPES, ...config.extraScopes].join(" "));
+  authorizeUrl.searchParams.set("scope", requestedScopes().join(" "));
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("code_challenge", codeChallenge);
   authorizeUrl.searchParams.set("code_challenge_method", "S256");

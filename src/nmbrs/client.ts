@@ -1,7 +1,7 @@
 import { getConfig } from "../config.js";
 import { getValidAccessToken } from "../auth/tokenStore.js";
 
-const API_BASE_URL = "https://api.nmbrsapp.com";
+export const API_BASE_URL = "https://api.nmbrsapp.com";
 const MAX_ATTEMPTS = 3;
 const BASE_DELAY_MS = 1000;
 

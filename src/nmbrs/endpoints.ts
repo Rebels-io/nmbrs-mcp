@@ -1,3 +1,4 @@
+import { currentUserKey } from "../auth/requestContext.js";
 import { nmbrsFetchAll, nmbrsPage } from "./client.js";
 import { mapLimit, ttlCache } from "./util.js";
 
@@ -143,7 +144,8 @@ const employeeCompany = new Map<string, string>();
 
 export async function findCompanyOfEmployee(employeeId: string, companyId?: string): Promise<string> {
   if (companyId) return companyId;
-  const known = employeeCompany.get(employeeId);
+  const cacheKey = `${currentUserKey()}:${employeeId}`;
+  const known = employeeCompany.get(cacheKey);
   if (known) return known;
 
   const companies = await listCompanies();
@@ -160,7 +162,7 @@ export async function findCompanyOfEmployee(employeeId: string, companyId?: stri
       `Medewerker ${employeeId} is niet gevonden in de bedrijven van deze debtor. Zoek de juiste id met nmbrs_search_employees.`
     );
   }
-  employeeCompany.set(employeeId, found);
+  employeeCompany.set(cacheKey, found);
   return found;
 }
 
@@ -172,13 +174,15 @@ export interface CompanySnapshot {
 
 const snapshots = ttlCache<CompanySnapshot>(5 * 60_000);
 
-export const getCompanySnapshot = (companyId: string) =>
-  snapshots(companyId, async () => {
+export const getCompanySnapshot = (companyId: string) => {
+  const userKey = currentUserKey();
+  return snapshots(`${userKey}:${companyId}`, async () => {
     const [employees, functions, departments] = await Promise.all([
       listEmployees(companyId),
       companyHistory<CodeEntry>(companyId, "functions", "functions").catch(() => new Map<string, CodeEntry[]>()),
       companyHistory<CodeEntry>(companyId, "departments", "departments").catch(() => new Map<string, CodeEntry[]>()),
     ]);
-    for (const row of employees) employeeCompany.set(row.employeeId, companyId);
+    for (const row of employees) employeeCompany.set(`${userKey}:${row.employeeId}`, companyId);
     return { employees, functions, departments };
   });
+};

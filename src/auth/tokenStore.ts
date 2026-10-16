@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { getConfig } from "../config.js";
 import { refreshTokens, type TokenResponse } from "./oauth.js";
+import { currentAccessToken } from "./requestContext.js";
 
 export interface StoredTokens {
   accessToken: string;
@@ -45,6 +46,9 @@ export async function readTokens(): Promise<StoredTokens | null> {
 }
 
 export async function getValidAccessToken(): Promise<string> {
+  const requestToken = currentAccessToken();
+  if (requestToken) return requestToken;
+
   const stored = await readTokens();
   if (!stored) {
     throw new Error("Nog niet ingelogd bij Nmbrs. Draai eerst 'npm run auth'.");

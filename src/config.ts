@@ -24,6 +24,8 @@ const envSchema = z.object({
   NMBRS_REDIRECT_URI: z.string().url().default("http://localhost:8765/callback"),
   NMBRS_TOKEN_STORE: z.string().min(1).default("./.tokens.json"),
   NMBRS_EXTRA_SCOPES: z.string().optional(),
+  MCP_BASE_URL: z.string().url().optional(),
+  PORT: z.coerce.number().int().positive().default(3000),
   NMBRS_READ_ONLY: boolFromString,
   NMBRS_REDACT_BSN: boolFromString,
 });
@@ -35,6 +37,8 @@ export interface NmbrsConfig {
   redirectUri: string;
   tokenStorePath: string;
   extraScopes: string[];
+  baseUrl?: string;
+  port: number;
   readOnly: boolean;
   redactBsn: boolean;
 }
@@ -56,6 +60,8 @@ export function getConfig(): NmbrsConfig {
     subscriptionKey: parsed.data.NMBRS_SUBSCRIPTION_KEY,
     redirectUri: parsed.data.NMBRS_REDIRECT_URI,
     tokenStorePath: resolve(projectRoot, parsed.data.NMBRS_TOKEN_STORE),
+    baseUrl: parsed.data.MCP_BASE_URL,
+    port: parsed.data.PORT,
     extraScopes: (parsed.data.NMBRS_EXTRA_SCOPES ?? "").split(/\s+/).filter(Boolean),
     readOnly: parsed.data.NMBRS_READ_ONLY,
     redactBsn: parsed.data.NMBRS_REDACT_BSN,
