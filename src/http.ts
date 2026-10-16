@@ -15,6 +15,14 @@ export function createApp(baseUrlInput: string): express.Express {
   const app = express();
   app.set("trust proxy", 1);
 
+  app.use((req, res, next) => {
+    const started = Date.now();
+    res.on("finish", () => {
+      console.error(`${req.method} ${req.originalUrl.split("?")[0]} ${res.statusCode} ${Date.now() - started}ms`);
+    });
+    next();
+  });
+
   app.get("/healthz", (_req, res) => {
     res.json({ status: "ok" });
   });
