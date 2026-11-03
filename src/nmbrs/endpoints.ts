@@ -1,5 +1,5 @@
 import { currentUserKey } from "../auth/requestContext.js";
-import { nmbrsFetchAll, nmbrsPage } from "./client.js";
+import { nmbrsFetchAll, nmbrsPage, type Query } from "./client.js";
 import { mapLimit, ttlCache } from "./util.js";
 
 export interface Period {
@@ -88,6 +88,28 @@ export interface LeaveGroup {
   description?: string;
 }
 
+export interface LeaveRequest {
+  leaveGroupId: string;
+  status?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  hours?: number;
+}
+
+export interface AbsenceRegistration {
+  percentage?: number;
+  startDate?: string | null;
+  registrationStartDate?: string | null;
+  endDate?: string | null;
+  registrationEndDate?: string | null;
+}
+
+export interface AbsenceDossier {
+  absenceDossierType?: string;
+  employeeAbsences?: AbsenceRegistration[];
+}
+
 export interface PayrollRun {
   payrollRunId: string;
   number?: number;
@@ -112,9 +134,11 @@ export async function companyHistory<T>(
   companyId: string,
   resource: string,
   key: string,
-  employeeId?: string
+  employeeId?: string,
+  extra: Query = {}
 ): Promise<Map<string, T[]>> {
   const rows = await nmbrsFetchAll<Record<string, unknown>>(`/api/companies/${companyId}/employees/${resource}`, {
+    ...extra,
     employeeId,
   });
   const byEmployee = new Map<string, T[]>();
@@ -128,6 +152,15 @@ export async function companyHistory<T>(
 
 export const listLeaveBalances = (companyId: string, employeeId: string) =>
   companyHistory<LeaveBalance>(companyId, "leaveBalances", "leaveBalances", employeeId);
+
+export const listLeaveRequests = (companyId: string, filter: { employeeId?: string; status?: string; year?: number }) =>
+  companyHistory<LeaveRequest>(companyId, "leaverequests", "EmployeeLeaveRequests", filter.employeeId, {
+    status: filter.status,
+    year: filter.year,
+  });
+
+export const listAbsenceDossiers = (companyId: string, employeeId?: string) =>
+  companyHistory<AbsenceDossier>(companyId, "absences", "employeeAbsenceDossiers", employeeId);
 
 export const listLeaveGroups = (companyId: string) =>
   nmbrsFetchAll<LeaveGroup>(`/api/companies/${companyId}/leaveGroups`);
