@@ -278,3 +278,18 @@ export async function fetchJournalXml(companyId: string, runId: string, year: nu
   }
   throw new Error("Nmbrs is het journaal nog aan het genereren. Probeer het over een minuut opnieuw.");
 }
+
+export interface UserInfo {
+  name?: string;
+  email?: string;
+  debtorId?: string;
+}
+
+export interface Debtor {
+  debtorId: string;
+  number?: string;
+  name: string;
+}
+
+export const getUserInfo = () => nmbrsFetchAll<UserInfo>("/api/user/info");
+export const listDebtors = () => nmbrsFetchAll<Debtor>("/api/debtors");

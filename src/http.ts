@@ -41,13 +41,45 @@ export function createApp(baseUrlInput: string): express.Express {
     provider.handleCallback(req, res).catch(next);
   });
 
-  const bearer = requireBearerAuth({
-    verifier: provider,
-    resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(mcpUrl),
+  const defaultMetadataUrl = getOAuthProtectedResourceMetadataUrl(mcpUrl);
+  const aliasPattern = /^[a-z0-9-]{1,32}$/i;
+  const mcpPaths = ["/mcp", "/mcp/:alias"];
+
+  // Claude weigert twee connectors met dezelfde URL. Met een alias in het pad
+  // heeft elk Nmbrs-account een eigen URL, terwijl het dezelfde server blijft.
+  app.get("/.well-known/oauth-protected-resource/mcp/:alias", (req, res) => {
+    const alias = String(req.params.alias);
+    if (!aliasPattern.test(alias)) {
+      res.status(404).end();
+      return;
+    }
+    res.json({
+      resource: `${baseUrl}/mcp/${alias}`,
+      authorization_servers: [new URL(baseUrl).href],
+      resource_name: "Nmbrs MCP",
+    });
   });
 
-  app.post("/mcp", express.json({ limit: "1mb" }), bearer, async (req, res) => {
-    const server = createServer();
+  const validAlias: express.RequestHandler = (req, res, next) => {
+    const alias = req.params.alias;
+    if (alias !== undefined && !aliasPattern.test(String(alias))) {
+      res.status(404).end();
+      return;
+    }
+    next();
+  };
+
+  const bearer: express.RequestHandler = (req, res, next) => {
+    const alias = req.params.alias;
+    requireBearerAuth({
+      verifier: provider,
+      resourceMetadataUrl: alias ? `${baseUrl}/.well-known/oauth-protected-resource/mcp/${alias}` : defaultMetadataUrl,
+    })(req, res, next);
+  };
+
+  app.post(mcpPaths, validAlias, express.json({ limit: "1mb" }), bearer, async (req, res) => {
+    const alias = req.params.alias ? String(req.params.alias) : undefined;
+    const server = createServer(alias);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
       void transport.close();
@@ -59,7 +91,7 @@ export function createApp(baseUrlInput: string): express.Express {
     });
   });
 
-  app.all("/mcp", (_req, res) => {
+  app.all(mcpPaths, (_req, res) => {
     res.status(405).json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null });
   });
 

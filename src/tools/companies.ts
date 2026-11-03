@@ -1,6 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { companyHistory, countEmployees, getCompanySnapshot, listCompanies, type CostCenterEntry } from "../nmbrs/endpoints.js";
-import { isActive, latestByPeriod } from "../nmbrs/mappers.js";
+import {
+  companyHistory,
+  countEmployees,
+  getCompanySnapshot,
+  getUserInfo,
+  listCompanies,
+  listDebtors,
+  type CostCenterEntry,
+} from "../nmbrs/endpoints.js";
+import { compact, isActive, latestByPeriod } from "../nmbrs/mappers.js";
 import { mapLimit } from "../nmbrs/util.js";
 import { companyIdArg, respond } from "./shared.js";
 
@@ -13,6 +21,29 @@ function countBy(entries: Array<string | undefined>) {
 }
 
 export function registerCompanyTools(server: McpServer): void {
+  server.registerTool(
+    "nmbrs_get_account",
+    {
+      description:
+        "Geeft het Nmbrs-account waarmee deze koppeling is ingelogd: naam, e-mailadres, de debtors die het account mag zien en het aantal bedrijven. Gebruik deze tool voor de vraag op welk account of in welke omgeving je zit, vooral als er meerdere Nmbrs-koppelingen zijn.",
+    },
+    () =>
+      respond(async () => {
+        const [users, debtors, companies] = await Promise.all([
+          getUserInfo().catch(() => []),
+          listDebtors().catch(() => []),
+          listCompanies(),
+        ]);
+        const user = users[0];
+        return {
+          user: user ? compact({ name: user.name, email: user.email }) : undefined,
+          debtors: debtors.map((d) => compact({ id: d.debtorId, name: d.name, number: d.number })),
+          companyCount: companies.length,
+          companies: companies.map((c) => c.name),
+        };
+      })
+  );
+
   server.registerTool(
     "nmbrs_list_companies",
     {
