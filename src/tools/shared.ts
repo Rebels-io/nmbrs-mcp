@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { listCompanies } from "../nmbrs/endpoints.js";
 import { redactSensitive } from "../nmbrs/redact.js";
 
 export const employeeIdArg = z
@@ -24,4 +25,9 @@ export async function respond(load: () => Promise<unknown>) {
       content: [{ type: "text" as const, text: err instanceof Error ? err.message : String(err) }],
     };
   }
+}
+
+export async function selectedCompanies(companyId?: string) {
+  const companies = await listCompanies();
+  return companies.filter((company) => !companyId || company.companyId === companyId);
 }

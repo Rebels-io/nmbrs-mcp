@@ -30,7 +30,7 @@ function retryDelayMs(res: Response, attempt: number): number {
   return BASE_DELAY_MS * 2 ** (attempt - 1);
 }
 
-export async function nmbrsFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function nmbrsRequest(path: string, init: RequestInit, accept: string): Promise<Response> {
   const config = getConfig();
   const method = (init.method ?? "GET").toUpperCase();
 
@@ -46,7 +46,7 @@ export async function nmbrsFetch<T>(path: string, init: RequestInit = {}): Promi
         ...init.headers,
         Authorization: `Bearer ${accessToken}`,
         "X-Subscription-Key": config.subscriptionKey,
-        Accept: "application/json",
+        Accept: accept,
       },
     });
 
@@ -59,8 +59,18 @@ export async function nmbrsFetch<T>(path: string, init: RequestInit = {}): Promi
       throw new NmbrsApiError(await describeError(res, path), res.status);
     }
 
-    return (await res.json()) as T;
+    return res;
   }
+}
+
+export async function nmbrsFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await nmbrsRequest(path, init, "application/json");
+  return (await res.json()) as T;
+}
+
+export async function nmbrsFetchText(path: string): Promise<{ status: number; body: string }> {
+  const res = await nmbrsRequest(path, {}, "*/*");
+  return { status: res.status, body: await res.text() };
 }
 
 async function describeError(res: Response, path: string): Promise<string> {

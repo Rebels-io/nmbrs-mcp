@@ -21,6 +21,8 @@ const SCOPES = [
   "employee.payment.read",
   "employee.employment.read",
   "employee.payrollsettings.read",
+  "company.document.read",
+  "document.read",
   "user.info.read",
   "debtor.info.read",
   "offline_access",

@@ -1,6 +1,6 @@
 import { currentUserKey } from "../auth/requestContext.js";
-import { nmbrsFetchAll, nmbrsPage, type Query } from "./client.js";
-import { mapLimit, ttlCache } from "./util.js";
+import { nmbrsFetch, nmbrsFetchAll, nmbrsFetchText, nmbrsPage, type Query } from "./client.js";
+import { mapLimit, sleep, ttlCache } from "./util.js";
 
 export interface Period {
   year?: number;
@@ -107,6 +107,7 @@ export interface AbsenceRegistration {
 
 export interface AbsenceDossier {
   absenceDossierType?: string;
+  absenceCause?: string;
   employeeAbsences?: AbsenceRegistration[];
 }
 
@@ -219,3 +220,61 @@ export const getCompanySnapshot = (companyId: string) => {
     return { employees, functions, departments };
   });
 };
+
+export interface WorkflowCodeLabel {
+  code?: number;
+  label?: string;
+}
+
+export interface WorkflowTrack {
+  name: string;
+  status: string;
+  actions: Array<{ action: WorkflowCodeLabel; status: WorkflowCodeLabel; runAt?: string | null }>;
+}
+
+export interface WorkflowYear {
+  year: number;
+  periods: Array<{ period: number; tracks: WorkflowTrack[] }>;
+}
+
+export interface CurrentPeriod {
+  period?: Period;
+  periodType?: string;
+  displayPeriod?: string;
+}
+
+export async function getCurrentPeriod(companyId: string): Promise<CurrentPeriod | undefined> {
+  const rows = await nmbrsFetchAll<CurrentPeriod>(`/api/companies/${companyId}/period`);
+  return rows[0];
+}
+
+export const getPayrollWorkflow = (companyId: string, query: Query) =>
+  nmbrsFetchAll<WorkflowYear>(`/api/companies/${companyId}/payrollworkflow`, query);
+
+export const listCostPerHour = (companyId: string, query: Query) =>
+  nmbrsFetchAll<{ employeeId: string; costPerHour?: string | null }>(
+    `/api/companies/${companyId}/employees/costperhour`,
+    query
+  );
+
+export const JOURNAL_KINDS = {
+  total: "journals",
+  department: "journalsdepartment",
+  employee: "journalsemployee",
+  costcenter: "journalscostcenter",
+  costunit: "journalscostcenterunit",
+} as const;
+
+export type JournalKind = keyof typeof JOURNAL_KINDS;
+
+export async function fetchJournalXml(companyId: string, runId: string, year: number, kind: JournalKind): Promise<string> {
+  const task = await nmbrsFetch<{ taskId: string }>(
+    `/api/companies/${companyId}/runs/${runId}/${JOURNAL_KINDS[kind]}?year=${year}`
+  );
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const result = await nmbrsFetchText(`/api/documents/${task.taskId}`);
+    if (result.status === 200) return result.body;
+    await sleep(1500);
+  }
+  throw new Error("Nmbrs is het journaal nog aan het genereren. Probeer het over een minuut opnieuw.");
+}
