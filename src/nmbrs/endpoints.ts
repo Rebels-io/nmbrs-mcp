@@ -293,3 +293,11 @@ export interface Debtor {
 
 export const getUserInfo = () => nmbrsFetchAll<UserInfo>("/api/user/info");
 export const listDebtors = () => nmbrsFetchAll<Debtor>("/api/debtors");
+
+const cachedCompanies = ttlCache<Company[]>(5 * 60_000);
+
+export const listCompaniesCached = () => cachedCompanies(currentUserKey(), () => listCompanies());
+
+export async function getCompanyName(companyId: string): Promise<string | undefined> {
+  return (await listCompaniesCached()).find((company) => company.companyId === companyId)?.name;
+}

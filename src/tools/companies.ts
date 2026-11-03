@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   companyHistory,
   countEmployees,
+  getCompanyName,
   getCompanySnapshot,
   getUserInfo,
   listCompanies,
@@ -89,6 +90,7 @@ export function registerCompanyTools(server: McpServer): void {
         });
 
         return {
+          companyName: await getCompanyName(companyId),
           activeEmployees: active.length,
           departments: countBy(departments),
           functions: countBy(functions),

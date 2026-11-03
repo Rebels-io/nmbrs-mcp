@@ -5,6 +5,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { requestContext } from "./auth/requestContext.js";
 import { NmbrsRemoteProvider } from "./auth/remoteProvider.js";
 import { getConfig } from "./config.js";
+import { describeAccount } from "./instructions.js";
 import { createServer } from "./server.js";
 
 export function createApp(baseUrlInput: string): express.Express {
@@ -79,13 +80,14 @@ export function createApp(baseUrlInput: string): express.Express {
 
   app.post(mcpPaths, validAlias, express.json({ limit: "1mb" }), bearer, async (req, res) => {
     const alias = req.params.alias ? String(req.params.alias) : undefined;
-    const server = createServer(alias);
-    const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-    res.on("close", () => {
-      void transport.close();
-      void server.close();
-    });
     await requestContext.run({ accessToken: req.auth!.token }, async () => {
+      const summary = req.body?.method === "initialize" ? await describeAccount().catch(() => undefined) : undefined;
+      const server = createServer(alias, summary);
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+      res.on("close", () => {
+        void transport.close();
+        void server.close();
+      });
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     });

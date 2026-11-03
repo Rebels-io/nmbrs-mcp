@@ -4,6 +4,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   countEmployeesInRun,
   fetchJournalXml,
+  getCompanyName,
   getCurrentPeriod,
   getPayrollWorkflow,
   listPayrollRuns,
@@ -30,17 +31,20 @@ export function registerPayrollTools(server: McpServer): void {
     },
     ({ companyId, year }) =>
       respond(async () => {
-        const runs = await listPayrollRuns(companyId, year);
-        return mapLimit(runs, 4, async (run) =>
-          compact({
-            runId: run.payrollRunId,
-            period: compact({ year: run.year, number: run.number, description: run.description }),
-            type: run.type,
-            status: run.locked ? "afgesloten" : "open",
-            runDate: day(run.createdAt),
-            employeeCount: await countEmployeesInRun(companyId, run.payrollRunId).catch(() => undefined),
-          })
-        );
+        const [runs, companyName] = await Promise.all([listPayrollRuns(companyId, year), getCompanyName(companyId)]);
+        return {
+          companyName,
+          runs: await mapLimit(runs, 4, async (run) =>
+            compact({
+              runId: run.payrollRunId,
+              period: compact({ year: run.year, number: run.number, description: run.description }),
+              type: run.type,
+              status: run.locked ? "afgesloten" : "open",
+              runDate: day(run.createdAt),
+              employeeCount: await countEmployeesInRun(companyId, run.payrollRunId).catch(() => undefined),
+            })
+          ),
+        };
       })
   );
 
@@ -131,6 +135,7 @@ export function registerPayrollTools(server: McpServer): void {
         const parsed = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@", parseTagValue: false }).parse(xml);
         const json = JSON.stringify(parsed);
         return {
+          companyName: await getCompanyName(companyId),
           run: compact({ runId: run.payrollRunId, year: run.year, number: run.number, description: run.description, status: run.locked ? "afgesloten" : "open" }),
           groupBy: kind,
           journal: json.length > MAX_JOURNAL_CHARS ? undefined : parsed,

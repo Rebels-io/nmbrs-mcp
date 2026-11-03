@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { companyHistory, findCompanyOfEmployee, type Salary } from "../nmbrs/endpoints.js";
 import { day, mapSalary } from "../nmbrs/mappers.js";
-import { employeeIdArg, optionalCompanyIdArg, respond } from "./shared.js";
+import { describeEmployee, employeeIdArg, optionalCompanyIdArg, respond } from "./shared.js";
 
 export function registerSalaryTools(server: McpServer): void {
   server.registerTool(
@@ -24,10 +24,13 @@ export function registerSalaryTools(server: McpServer): void {
         if (!salaries) {
           throw new Error(`Geen salarissen gevonden voor ${employeeId}. Controleer de id met nmbrs_search_employees.`);
         }
-        return salaries
-          .filter((s) => (!from || (day(s.startDate) ?? "") >= from) && (!to || (day(s.startDate) ?? "") <= to))
-          .sort((a, b) => a.startDate.localeCompare(b.startDate))
-          .map(mapSalary);
+        return {
+          ...(await describeEmployee(companyId, employeeId)),
+          salaries: salaries
+            .filter((s) => (!from || (day(s.startDate) ?? "") >= from) && (!to || (day(s.startDate) ?? "") <= to))
+            .sort((a, b) => a.startDate.localeCompare(b.startDate))
+            .map(mapSalary),
+        };
       })
   );
 }

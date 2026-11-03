@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { listCompanies } from "../nmbrs/endpoints.js";
+import { getCompanyName, listCompanies, listEmployees } from "../nmbrs/endpoints.js";
+import { employeeName } from "../nmbrs/mappers.js";
 import { redactSensitive } from "../nmbrs/redact.js";
 
 export const employeeIdArg = z
@@ -30,4 +31,10 @@ export async function respond(load: () => Promise<unknown>) {
 export async function selectedCompanies(companyId?: string) {
   const companies = await listCompanies();
   return companies.filter((company) => !companyId || company.companyId === companyId);
+}
+
+export async function describeEmployee(companyId: string, employeeId: string) {
+  const [rows, companyName] = await Promise.all([listEmployees(companyId, { employeeId }), getCompanyName(companyId)]);
+  const info = rows.find((row) => row.employeeId === employeeId)?.employeeBasicInfo;
+  return { employee: info ? employeeName(info) : undefined, companyName };
 }
