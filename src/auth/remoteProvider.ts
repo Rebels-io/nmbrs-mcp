@@ -45,6 +45,10 @@ function toOAuthTokens(res: NmbrsTokenResponse): OAuthTokens {
   };
 }
 
+function errorPage(title: string, text: string): string {
+  return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{font-family:system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;line-height:1.5;color:#1b1b1b}h1{font-size:1.4rem}</style></head><body><h1>${title}</h1><p>${text}</p><p>Sluit dit venster en probeer het in Claude opnieuw.</p></body></html>`;
+}
+
 export class NmbrsRemoteProvider implements OAuthServerProvider {
   private readonly clients = new Map<string, OAuthClientInformationFull>();
   private readonly pending = new Map<string, Pending>();
@@ -127,10 +131,34 @@ export class NmbrsRemoteProvider implements OAuthServerProvider {
         redirect_uri: this.callbackUrl,
         code_verifier: entry.upstreamVerifier,
       });
+      const status = await this.probeNmbrs(tokens.access_token);
+      if (status === 401 || status === 403) {
+        console.error(`Verbinden afgebroken: Nmbrs weigert dit account de API (status ${status}).`);
+        res
+          .status(403)
+          .type("html")
+          .send(
+            errorPage(
+              "Dit Nmbrs-account heeft geen toegang tot de API",
+              `Nmbrs gaf status ${status} op de eerste aanvraag. Meestal ontbreekt voor dit account de API-toegang bij de accountant (API-token en filterinstellingen), of is bij het inloggen een ander account gekozen dan bedoeld. Vraag de Nmbrs-beheerder om de toegang te controleren.`
+            )
+          );
+        return;
+      }
+      if (status !== 200) {
+        console.error(`Verbinden afgebroken: Nmbrs gaf status ${status} bij de eerste aanvraag.`);
+        res
+          .status(502)
+          .type("html")
+          .send(errorPage("Nmbrs reageert niet goed", `Nmbrs gaf status ${status} terug. Dit is meestal tijdelijk.`));
+        return;
+      }
+      this.verified.set(createHash("sha256").update(tokens.access_token).digest("hex"), Date.now() + VERIFY_TTL_MS);
       const ourCode = randomBytes(32).toString("base64url");
       this.codes.set(ourCode, { codeChallenge: entry.codeChallenge, tokens, createdAt: Date.now() });
       back.searchParams.set("code", ourCode);
-    } catch {
+    } catch (err) {
+      console.error(`Verbinden mislukt: ${err instanceof Error ? err.message : String(err)}`);
       back.searchParams.set("error", "server_error");
     }
     res.redirect(back.toString());
@@ -158,18 +186,29 @@ export class NmbrsRemoteProvider implements OAuthServerProvider {
     const now = Date.now();
     const knownUntil = this.verified.get(key);
     if (!knownUntil || knownUntil < now) {
-      const res = await fetch(`${API_BASE_URL}/api/companies?pageSize=1`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Subscription-Key": getConfig().subscriptionKey,
-          Accept: "application/json",
-        },
-      });
-      if (res.status === 401 || res.status === 403) throw new InvalidTokenError("Nmbrs weigerde het token.");
-      if (!res.ok) throw new Error(`Nmbrs kon het token niet controleren (${res.status}).`);
+      const status = await this.probeNmbrs(token);
+      if (status === 401 || status === 403) {
+        console.error(`Tokencontrole: Nmbrs weigerde het token (status ${status}).`);
+        throw new InvalidTokenError("Nmbrs weigerde het token.");
+      }
+      if (status !== 200) {
+        console.error(`Tokencontrole: Nmbrs gaf status ${status}.`);
+        throw new Error(`Nmbrs kon het token niet controleren (${status}).`);
+      }
       this.verified.set(key, now + VERIFY_TTL_MS);
     }
     return { token, clientId: "nmbrs", scopes: [], expiresAt: Math.floor((now + VERIFY_TTL_MS) / 1000) };
+  }
+
+  private async probeNmbrs(token: string): Promise<number> {
+    const res = await fetch(`${API_BASE_URL}/api/companies?pageSize=1`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-Subscription-Key": getConfig().subscriptionKey,
+        Accept: "application/json",
+      },
+    });
+    return res.status;
   }
 
   private async nmbrsTokenRequest(params: Record<string, string>): Promise<OAuthTokens> {
