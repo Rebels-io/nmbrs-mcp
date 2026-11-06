@@ -26,7 +26,7 @@ export function registerAbsenceTools(server: McpServer): void {
     "nmbrs_list_leave_requests",
     {
       description:
-        "Geeft verlofaanvragen per medewerker, standaard alleen de openstaande (status pending). Gebruik deze tool voor de vraag welke verlofaanvragen er nog open staan of zijn goedgekeurd. Voor het resterende saldo gebruik je nmbrs_get_leave_balance. Declaraties en onkostenvergoedingen kan Nmbrs via deze koppeling niet leveren.",
+        "Geeft verlofaanvragen per medewerker, standaard alleen de openstaande (status pending). Gebruik deze tool voor de vraag welke verlofaanvragen er nog open staan of zijn goedgekeurd. Voor het resterende saldo gebruik je nmbrs_get_leave_balance. Voor verwerkte declaraties gebruik je nmbrs_list_variable_wage_components.",
       inputSchema: {
         companyId: optionalCompanyIdArg,
         status: z.enum(["pending", "approved", "rejected"]).optional().describe("Standaard pending."),

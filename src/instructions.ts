@@ -7,7 +7,7 @@ export function baseInstructions(includesAbsenceCause: boolean): string {
     "Noemt de gebruiker geen bedrijf en zijn er meerdere, vraag dan om welk bedrijf het gaat, of geef de uitkomst per bedrijf.",
     "Gebruik alleen id's uit de resultaten van deze tools. Een bedrijfs-id en een medewerkers-id horen bij precies één bedrijf. Verzin of raad geen id's.",
     "Ontbreken er gegevens, of lijkt een cijfer niet te kloppen, zeg dat dan en vul niets aan.",
-    "Declaraties en onkostenvergoedingen zijn niet beschikbaar via deze koppeling.",
+    "Declaraties zelf (openstaand, in behandeling, afgekeurd, status en categorie) zijn niet beschikbaar via deze koppeling. Goedgekeurde declaraties die klaarstaan voor de verloning staan als variabel looncomponent in nmbrs_list_variable_wage_components. Zeg erbij dat dit alleen verwerkte bedragen zijn.",
   ];
   if (includesAbsenceCause) {
     rules.push("De oorzaak van verzuim is een gezondheidsgegeven. Noem die alleen als de gebruiker er expliciet om vraagt.");

@@ -163,6 +163,30 @@ export const listLeaveRequests = (companyId: string, filter: { employeeId?: stri
 export const listAbsenceDossiers = (companyId: string, employeeId?: string) =>
   companyHistory<AbsenceDossier>(companyId, "absences", "employeeAbsenceDossiers", employeeId);
 
+export interface VariableWageComponent {
+  variableWageComponentId?: string;
+  code?: number;
+  value?: number;
+  comment?: string | null;
+}
+
+export async function listVariableWageComponents(
+  companyId: string,
+  query: { employeeId?: string; year?: number; period?: number }
+): Promise<Map<string, VariableWageComponent[]>> {
+  const rows = await nmbrsFetchAll<Record<string, unknown>>(
+    `/api/companies/${companyId}/employees/variablewagecomponents`,
+    query
+  );
+  const byEmployee = new Map<string, VariableWageComponent[]>();
+  for (const row of rows) {
+    const id = String(row.employeeId);
+    const entries = (row.variablewagecomponents ?? row.variableWageComponents ?? []) as VariableWageComponent[];
+    byEmployee.set(id, [...(byEmployee.get(id) ?? []), ...entries]);
+  }
+  return byEmployee;
+}
+
 export const listLeaveGroups = (companyId: string) =>
   nmbrsFetchAll<LeaveGroup>(`/api/companies/${companyId}/leaveGroups`);
 

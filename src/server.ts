@@ -8,6 +8,7 @@ import { registerEmployeeTools } from "./tools/employees.js";
 import { registerLeaveTools } from "./tools/leave.js";
 import { registerPayrollTools } from "./tools/payroll.js";
 import { registerSalaryTools } from "./tools/salary.js";
+import { registerWageComponentTools } from "./tools/wagecomponents.js";
 
 export function createServer(alias?: string, accountSummary?: string): McpServer {
   const config = getConfig();
@@ -20,7 +21,7 @@ export function createServer(alias?: string, accountSummary?: string): McpServer
     .filter(Boolean)
     .join("\n\n");
 
-  const server = new McpServer({ name: alias ? `nmbrs-mcp-${alias}` : "nmbrs-mcp", version: "0.7.0" }, { instructions });
+  const server = new McpServer({ name: alias ? `nmbrs-mcp-${alias}` : "nmbrs-mcp", version: "0.8.0" }, { instructions });
   registerCompanyTools(server);
   registerEmployeeTools(server);
   registerSalaryTools(server);
@@ -28,5 +29,6 @@ export function createServer(alias?: string, accountSummary?: string): McpServer
   registerAbsenceTools(server);
   registerPayrollTools(server);
   registerCostTools(server);
+  registerWageComponentTools(server);
   return server;
 }
